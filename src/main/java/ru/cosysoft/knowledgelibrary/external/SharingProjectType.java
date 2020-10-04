@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public enum KnowledgeSharingType {
+public enum SharingProjectType {
     PROOF(107),
     GOOD_IDEA(106),
     OTHER(113);

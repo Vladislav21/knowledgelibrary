@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,8 +26,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+import ru.cosysoft.knowledgelibrary.external.GitLabFile;
 import ru.cosysoft.knowledgelibrary.external.GitLabProject;
-import ru.cosysoft.knowledgelibrary.external.GitLabResponse;
+import ru.cosysoft.knowledgelibrary.external.GitLabTag;
 import ru.cosysoft.knowledgelibrary.external.Projects;
 import ru.cosysoft.knowledgelibrary.web.payload.ProjectPublication;
 
@@ -54,7 +52,7 @@ public class KnowledgeLibraryController {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<String> publishKnowledge(@RequestBody final ProjectPublication projectPublication) {
-        final GitLabProject gitLabProject = new GitLabProject(projectPublication);
+        final GitLabProject gitLabProject = GitLabProject.of(projectPublication);
         final String projectPulicationUrl = this.apiUrl + "projects";
         final HttpHeaders headers = new HttpHeaders();
         headers.set("PRIVATE-TOKEN", this.accessToken);
@@ -88,7 +86,7 @@ public class KnowledgeLibraryController {
         }
         final List<Projects> projectsWithKnowledgeSharing =
             projects.stream()
-                .filter(project -> project.getHttp_url_to_repo().contains("knowledge-sharing"))
+                .filter(project -> project.getHttpUrlToRepo().contains("knowledge-sharing"))
                 .filter(project -> this.isValidReadme(project, keyword))
                 .collect(Collectors.toList());
 
@@ -99,7 +97,7 @@ public class KnowledgeLibraryController {
         List<Projects> projectWithTags = new ArrayList<>();
         if (!CollectionUtils.isEmpty(tags)) {
             projectWithTags = projects.stream()
-                .filter(project -> project.getHttp_url_to_repo().contains("knowledge-sharing"))
+                .filter(project -> project.getHttpUrlToRepo().contains("knowledge-sharing"))
                 .filter(project -> {
                     final Long projectId = project.getId();
                     final String tagList = this.apiUrl + "projects/" + projectId + "/repository/tags";
@@ -144,7 +142,7 @@ public class KnowledgeLibraryController {
         final Collection<Projects> projects = projectsListResult.getBody();
 
         final Collection<GitLabTag> result = projects.stream()
-            .filter(project -> project.getHttp_url_to_repo().contains("knowledge-sharing"))
+            .filter(project -> project.getHttpUrlToRepo().contains("knowledge-sharing"))
             .flatMap(project -> {
                 final Long projectId = project.getId();
                 final String tagList = this.apiUrl + "projects/" + projectId + "/repository/tags";
@@ -183,21 +181,5 @@ public class KnowledgeLibraryController {
         } catch (Exception e) {
             return false;
         }
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    private static class GitLabFile implements GitLabResponse {
-        private String file_name;
-        private String encoding;
-        private String content;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    private static class GitLabTag implements GitLabResponse{
-        private String name;
     }
 }
