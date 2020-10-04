@@ -129,6 +129,40 @@ public class KnowledgeLibraryController {
         return result;
     }
 
+    @GetMapping(value = "/tags", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Collection<GitLabTag>> getAllTags() {
+        final String projectList = this.apiUrl + "projects?per_page=100";
+        final HttpHeaders headers = new HttpHeaders();
+        headers.set("PRIVATE-TOKEN", this.accessToken);
+        final HttpEntity<Object> httpEntity = new HttpEntity<>(null, headers);
+
+        final ParameterizedTypeReference<Collection<Projects>> parameterizedTypeReference =
+            new ParameterizedTypeReference<Collection<Projects>>() {
+            };
+        final ResponseEntity<Collection<Projects>> projectsListResult =
+            this.restTemplate.exchange(projectList, HttpMethod.GET, httpEntity, parameterizedTypeReference);
+        final Collection<Projects> projects = projectsListResult.getBody();
+
+        final Collection<GitLabTag> result = projects.stream()
+            .filter(project -> project.getHttp_url_to_repo().contains("knowledge-sharing"))
+            .flatMap(project -> {
+                final Long projectId = project.getId();
+                final String tagList = this.apiUrl + "projects/" + projectId + "/repository/tags";
+                final HttpEntity<Object> httpTagEntity = new HttpEntity<>(null, headers);
+
+                final ParameterizedTypeReference<Collection<GitLabTag>> gggggg =
+                    new ParameterizedTypeReference<Collection<GitLabTag>>() {
+                    };
+
+                final ResponseEntity<Collection<GitLabTag>> tagResult =
+                    this.restTemplate.exchange(tagList, HttpMethod.GET, httpEntity, gggggg);
+                final Collection<GitLabTag> tagBody = tagResult.getBody();
+                return tagBody.stream();
+            }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(result);
+    }
+
     @SneakyThrows
     private boolean isValidReadme(final Projects projects, final String keyword) {
         if (StringUtils.isEmpty(keyword)) return true;
@@ -158,5 +192,12 @@ public class KnowledgeLibraryController {
         private String file_name;
         private String encoding;
         private String content;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    private static class GitLabTag implements GitLabResponse{
+        private String name;
     }
 }
