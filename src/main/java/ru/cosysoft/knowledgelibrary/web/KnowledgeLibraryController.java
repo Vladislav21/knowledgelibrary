@@ -18,6 +18,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -76,6 +77,7 @@ public class KnowledgeLibraryController {
 
     @SneakyThrows
     private boolean isValidReadme(final Projects projects, final String keyword) {
+        if (StringUtils.isEmpty(keyword)) return true;
         final String projectList = this.apiUrl + "projects/" + projects.getId() + "/repository/files/README.md?ref=master";
         final HttpHeaders headers = new HttpHeaders();
         headers.set("PRIVATE-TOKEN", this.accessToken);
