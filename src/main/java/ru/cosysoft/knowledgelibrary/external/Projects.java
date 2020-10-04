@@ -1,6 +1,7 @@
 package ru.cosysoft.knowledgelibrary.external;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.Collection;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,4 +15,5 @@ public class Projects implements GitLabResponse {
     private String description;
     private String http_url_to_repo;
     private String readme_url;
+    private Collection<String> tag_list;
 }

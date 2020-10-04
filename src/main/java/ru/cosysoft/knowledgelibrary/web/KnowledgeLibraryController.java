@@ -21,16 +21,20 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+import ru.cosysoft.knowledgelibrary.external.GitLabProject;
 import ru.cosysoft.knowledgelibrary.external.GitLabResponse;
 import ru.cosysoft.knowledgelibrary.external.Projects;
+import ru.cosysoft.knowledgelibrary.web.payload.ProjectPublication;
 
 @RestController
 @RequestMapping("/knowledge-library")
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class KnowledgeLibraryController {
 
     @Value("${knowledge.storage-api-v4}")
@@ -41,9 +45,22 @@ public class KnowledgeLibraryController {
 
     private final RestTemplate restTemplate;
 
-    @PostMapping("/publish")
-    public String publishKnowledge() {
-        return "Hello from publishKnowledge";
+    @PostMapping(
+        value = "/publish",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<String> publishKnowledge(@RequestBody final ProjectPublication projectPublication) {
+        final GitLabProject gitLabProject = new GitLabProject(projectPublication);
+        final String projectPulicationUrl = this.apiUrl + "projects";
+        final HttpHeaders headers = new HttpHeaders();
+        headers.set("PRIVATE-TOKEN", this.accessToken);
+        final HttpEntity<GitLabProject> httpEntity = new HttpEntity<>(gitLabProject, headers);
+
+        final ResponseEntity<String> projectsListResult =
+            this.restTemplate.exchange(projectPulicationUrl, HttpMethod.POST, httpEntity, String.class);
+
+        return projectsListResult;
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -82,15 +99,19 @@ public class KnowledgeLibraryController {
         final HttpHeaders headers = new HttpHeaders();
         headers.set("PRIVATE-TOKEN", this.accessToken);
         final HttpEntity<Object> httpEntity = new HttpEntity<>(null, headers);
-        final ResponseEntity<GitLabFile> projectsListResult =
-            this.restTemplate.exchange(projectList, HttpMethod.GET, httpEntity, GitLabFile.class);
-        final GitLabFile gitLabFile = projectsListResult.getBody();
-        if (gitLabFile == null) {
+        try {
+            final ResponseEntity<GitLabFile> projectsListResult =
+                this.restTemplate.exchange(projectList, HttpMethod.GET, httpEntity, GitLabFile.class);
+            final GitLabFile gitLabFile = projectsListResult.getBody();
+            if (gitLabFile == null) {
+                return false;
+            }
+            final byte[] content = Base64.getDecoder().decode(gitLabFile.getContent());
+            final String contentAsStr = new String(content, StandardCharsets.UTF_8);
+            return contentAsStr.contains(keyword);
+        } catch (Exception e) {
             return false;
         }
-        final byte[] content = Base64.getDecoder().decode(gitLabFile.getContent());
-        final String contentAsStr = new String(content, StandardCharsets.UTF_8);
-        return contentAsStr.contains(keyword);
     }
 
     @Data
