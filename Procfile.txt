@@ -1,0 +1,1 @@
+web: java -jar target/knowledgelibrary-0.0.1-develop.jar
