@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
@@ -70,7 +71,7 @@ public class KnowledgeLibraryController {
         @RequestParam(value = "tags", required = false) final Collection<String> tags,
         @RequestParam(value = "keyword", required = false) final String keyword
     ) {
-        final String projectList = this.apiUrl + "projects";
+        final String projectList = this.apiUrl + "projects?per_page=100";
         final HttpHeaders headers = new HttpHeaders();
         headers.set("PRIVATE-TOKEN", this.accessToken);
         final HttpEntity<Object> httpEntity = new HttpEntity<>(null, headers);
@@ -91,9 +92,14 @@ public class KnowledgeLibraryController {
                 .filter(project -> this.isValidReadme(project, keyword))
                 .collect(Collectors.toList());
 
+        if (CollectionUtils.isEmpty(tags)) {
+            return projectsWithKnowledgeSharing;
+        }
+
         List<Projects> projectWithTags = new ArrayList<>();
         if (!CollectionUtils.isEmpty(tags)) {
             projectWithTags = projects.stream()
+                .filter(project -> project.getHttp_url_to_repo().contains("knowledge-sharing"))
                 .filter(project -> {
                     final Long projectId = project.getId();
                     final String tagList = this.apiUrl + "projects/" + projectId + "/repository/tags";
@@ -117,8 +123,8 @@ public class KnowledgeLibraryController {
             return projectWithTags;
         }
 
-        List<Projects> result =
-            Stream.of(projectsWithKnowledgeSharing, projectWithTags).flatMap(Collection::stream).collect(Collectors.toList());
+        Set<Projects> result =
+            Stream.of(projectsWithKnowledgeSharing, projectWithTags).flatMap(Collection::stream).collect(Collectors.toSet());
 
         return result;
     }
