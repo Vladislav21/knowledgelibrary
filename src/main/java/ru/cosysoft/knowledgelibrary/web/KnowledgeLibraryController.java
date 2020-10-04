@@ -1,10 +1,12 @@
 package ru.cosysoft.knowledgelibrary.web;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -89,7 +91,36 @@ public class KnowledgeLibraryController {
                 .filter(project -> this.isValidReadme(project, keyword))
                 .collect(Collectors.toList());
 
-        return projectsWithKnowledgeSharing;
+        List<Projects> projectWithTags = new ArrayList<>();
+        if (!CollectionUtils.isEmpty(tags)) {
+            projectWithTags = projects.stream()
+                .filter(project -> {
+                    final Long projectId = project.getId();
+                    final String tagList = this.apiUrl + "projects/" + projectId + "/repository/tags";
+                    final HttpEntity<Object> httpTagEntity = new HttpEntity<>(null, headers);
+                    final ResponseEntity<String> tagResult =
+                        this.restTemplate.exchange(tagList, HttpMethod.GET, httpEntity, String.class);
+                    final String tagBody = tagResult.getBody();
+                    if (StringUtils.isEmpty(tagBody)) {
+                        return false;
+                    } else {
+                        return tags.stream().anyMatch(tag -> tagBody.contains(tag));
+                    }
+                }).collect(Collectors.toList());
+        }
+
+        if (!CollectionUtils.isEmpty(tags) && StringUtils.isEmpty(keyword)) {
+            return projectWithTags;
+        }
+
+        if (CollectionUtils.isEmpty(projectWithTags) && StringUtils.isEmpty(keyword)) {
+            return projectWithTags;
+        }
+
+        List<Projects> result =
+            Stream.of(projectsWithKnowledgeSharing, projectWithTags).flatMap(Collection::stream).collect(Collectors.toList());
+
+        return result;
     }
 
     @SneakyThrows
