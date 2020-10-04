@@ -4,7 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
+ * API Documentation:
  * http://localhost:8080/swagger-ui.html
+ * https://knowledgelibrary.herokuapp.com/swagger-ui.html
  */
 @SpringBootApplication
 public class KnowledgelibraryApplication {
