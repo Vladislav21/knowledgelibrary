@@ -102,13 +102,18 @@ public class KnowledgeLibraryController {
                     final Long projectId = project.getId();
                     final String tagList = this.apiUrl + "projects/" + projectId + "/repository/tags";
                     final HttpEntity<Object> httpTagEntity = new HttpEntity<>(null, headers);
-                    final ResponseEntity<String> tagResult =
-                        this.restTemplate.exchange(tagList, HttpMethod.GET, httpEntity, String.class);
-                    final String tagBody = tagResult.getBody();
+
+                    final ParameterizedTypeReference<Collection<GitLabTag>> gggggg =
+                        new ParameterizedTypeReference<Collection<GitLabTag>>() {
+                        };
+
+                    final ResponseEntity<Collection<GitLabTag>> tagResult =
+                        this.restTemplate.exchange(tagList, HttpMethod.GET, httpEntity, gggggg);
+                    final Collection<GitLabTag> tagBody = tagResult.getBody();
                     if (StringUtils.isEmpty(tagBody)) {
                         return false;
                     } else {
-                        return tags.stream().anyMatch(tag -> tagBody.contains(tag));
+                        return tags.stream().anyMatch(tag -> tagBody.stream().anyMatch(tagg -> tagg.getName().equals(tag)));
                     }
                 }).collect(Collectors.toList());
         }
